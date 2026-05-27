@@ -1,0 +1,6 @@
+node_modules/
+dist/
+data/processed/
+npm-debug.log*
+.DS_Store
+.env
