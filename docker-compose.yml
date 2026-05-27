@@ -3,12 +3,12 @@ services:
     image: nginx:1.27-alpine
     platform: linux/amd64
     cpus: 0.10
-    mem_limit: 32m
+    mem_limit: 24m
     deploy:
       resources:
         limits:
           cpus: '0.10'
-          memory: 32M
+          memory: 24M
     ports:
       - '9999:9999'
     volumes:
@@ -21,12 +21,12 @@ services:
     image: gustavotinoo/rinha-fraud-api:latest
     platform: linux/amd64
     cpus: 0.45
-    mem_limit: 159m
+    mem_limit: 163m
     deploy:
       resources:
         limits:
           cpus: '0.45'
-          memory: 159M
+          memory: 163M
     environment:
       NODE_ENV: production
       PORT: 8080
@@ -38,12 +38,12 @@ services:
     image: gustavotinoo/rinha-fraud-api:latest
     platform: linux/amd64
     cpus: 0.45
-    mem_limit: 159m
+    mem_limit: 163m
     deploy:
       resources:
         limits:
           cpus: '0.45'
-          memory: 159M
+          memory: 163M
     environment:
       NODE_ENV: production
       PORT: 8080
