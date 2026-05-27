@@ -174,10 +174,13 @@ export function topKBucketSearch(
   const q8 = bucketNibble(query[8] as number);
 
   searchBucketRange(index, query, result, q0, q3, q4, q5, q8, 0);
-  searchBucketRange(index, query, result, q0, q3, q4, q5, q8, 1);
 
   if (result.found < topK) {
-    return topKSearch(index, query, topK, result);
+    searchBucketRange(index, query, result, q0, q3, q4, q5, q8, 1);
+  }
+
+  if (result.found < topK) {
+    searchBucketRange(index, query, result, q0, q3, q4, q5, q8, 2);
   }
 
   return result;
@@ -242,7 +245,7 @@ function searchBucketRange(
       for (let b4 = from4; b4 <= to4; b4 += 1) {
         for (let b5 = from5; b5 <= to5; b5 += 1) {
           for (let b8 = from8; b8 <= to8; b8 += 1) {
-            if (radius > 0 && b0 === q0 && b3 === q3 && b4 === q4 && b5 === q5 && b8 === q8) {
+            if (bucketShellRadius(b0, b3, b4, b5, b8, q0, q3, q4, q5, q8) !== radius) {
               continue;
             }
 
@@ -252,6 +255,27 @@ function searchBucketRange(
       }
     }
   }
+}
+
+function bucketShellRadius(
+  b0: number,
+  b3: number,
+  b4: number,
+  b5: number,
+  b8: number,
+  q0: number,
+  q3: number,
+  q4: number,
+  q5: number,
+  q8: number,
+): number {
+  return Math.max(
+    Math.abs(b0 - q0),
+    Math.abs(b3 - q3),
+    Math.abs(b4 - q4),
+    Math.abs(b5 - q5),
+    Math.abs(b8 - q8),
+  );
 }
 
 function searchBucket(
