@@ -1,10 +1,10 @@
-export const QUANTIZED_ZERO = 32768;
-export const QUANTIZED_SCALE = 32767;
+export const QUANTIZED_ZERO = 128;
+export const QUANTIZED_SCALE = 127;
 
 export type VectorSearchIndex = {
   readonly dimensions: number;
   readonly count: number;
-  readonly vectors: Uint16Array;
+  readonly vectors: Uint8Array;
   readonly labels: Uint8Array;
   readonly bucketHeads?: Uint32Array;
   readonly bucketNext?: Uint32Array;
@@ -29,9 +29,9 @@ export function createVectorSearchIndex(dimensions: number, count: number): Vect
   return {
     dimensions,
     count,
-    // Uint16Array guarda os vetores em memoria continua e compacta.
+    // Uint8Array guarda os vetores em memoria continua e compacta.
     // Isso evita milhoes de arrays/objetos JS e reduz pressao de GC.
-    vectors: new Uint16Array(dimensions * count),
+    vectors: new Uint8Array(dimensions * count),
     // Uint8Array basta para label binaria: 0 = legit, 1 = fraud.
     labels: new Uint8Array(count),
   };
@@ -39,7 +39,7 @@ export function createVectorSearchIndex(dimensions: number, count: number): Vect
 
 export function createVectorSearchIndexFrom(
   dimensions: number,
-  vectors: Uint16Array,
+  vectors: Uint8Array,
   labels: Uint8Array,
   bucketHeads?: Uint32Array,
   bucketNext?: Uint32Array,
@@ -81,7 +81,7 @@ export function createVectorSearchIndexFrom(
   };
 }
 
-export function quantizeVector(input: Float32Array, output: Uint16Array): Uint16Array {
+export function quantizeVector(input: Float32Array, output: Uint8Array): Uint8Array {
   for (let index = 0; index < input.length; index += 1) {
     output[index] = quantizeValue(input[index] as number);
   }
@@ -95,7 +95,7 @@ export function quantizeValue(value: number): number {
   }
 
   if (value >= 1) {
-    return 65535;
+    return 255;
   }
 
   return QUANTIZED_ZERO + Math.round(value * QUANTIZED_SCALE);
@@ -103,7 +103,7 @@ export function quantizeValue(value: number): number {
 
 export function topKSearch(
   index: VectorSearchIndex,
-  query: Uint16Array,
+  query: Uint8Array,
   topK: number,
   result: TopKResult,
 ): TopKResult {
@@ -152,7 +152,7 @@ export function topKSearch(
 
 export function topKBucketSearch(
   index: VectorSearchIndex,
-  query: Uint16Array,
+  query: Uint8Array,
   topK: number,
   result: TopKResult,
 ): TopKResult {
@@ -220,7 +220,7 @@ function resetTopKResult(topK: number, result: TopKResult): void {
 
 function searchBucketRange(
   index: VectorSearchIndex,
-  query: Uint16Array,
+  query: Uint8Array,
   result: TopKResult,
   q0: number,
   q3: number,
@@ -280,7 +280,7 @@ function bucketShellRadius(
 
 function searchBucket(
   index: VectorSearchIndex,
-  query: Uint16Array,
+  query: Uint8Array,
   result: TopKResult,
   bucketKey: number,
 ): void {
@@ -314,7 +314,7 @@ function searchBucket(
   }
 }
 
-export function bucketKey(vector: Uint16Array, offset: number): number {
+export function bucketKey(vector: Uint8Array, offset: number): number {
   return bucketKeyFromNibbles(
     bucketNibble(vector[offset] as number),
     bucketNibble(vector[offset + 3] as number),

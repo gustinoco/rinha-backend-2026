@@ -14,9 +14,9 @@ import { bucketKey, quantizeValue } from '../src/core/vector-search.js';
 
 const INPUT_FILE = findInputFile();
 const OUTPUT_DIR = join(process.cwd(), 'data', 'processed');
-const VECTORS_TMP = join(OUTPUT_DIR, 'reference-vectors.u16.tmp');
+const VECTORS_TMP = join(OUTPUT_DIR, 'reference-vectors.u8.tmp');
 const LABELS_TMP = join(OUTPUT_DIR, 'reference-labels.u8.tmp');
-const VECTORS_FILE = join(OUTPUT_DIR, 'reference-vectors.u16');
+const VECTORS_FILE = join(OUTPUT_DIR, 'reference-vectors.u8');
 const LABELS_FILE = join(OUTPUT_DIR, 'reference-labels.u8');
 const BUCKET_HEADS_TMP = join(OUTPUT_DIR, 'reference-bucket-heads.u32.tmp');
 const BUCKET_NEXT_TMP = join(OUTPUT_DIR, 'reference-bucket-next.u32.tmp');
@@ -34,7 +34,7 @@ rmIfExists(BUCKET_NEXT_TMP);
 
 const vectorOut = createWriteStream(VECTORS_TMP);
 const labelOut = createWriteStream(LABELS_TMP);
-const currentVector = new Uint16Array(VECTOR_DIMENSIONS);
+const currentVector = new Uint8Array(VECTOR_DIMENSIONS);
 const bucketHeads = new Uint32Array(BUCKET_COUNT);
 const bucketNext = new Uint32Array(MAX_REFERENCES);
 

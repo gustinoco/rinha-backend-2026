@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { VECTOR_DIMENSIONS } from '../core/normalize.js';
 import { BUCKET_COUNT, createVectorSearchIndexFrom } from '../core/vector-search.js';
 
-const VECTORS_FILE = 'reference-vectors.u16';
+const VECTORS_FILE = 'reference-vectors.u8';
 const LABELS_FILE = 'reference-labels.u8';
 const BUCKET_HEADS_FILE = 'reference-bucket-heads.u32';
 const BUCKET_NEXT_FILE = 'reference-bucket-next.u32';
@@ -25,7 +25,7 @@ function loadReferenceIndex() {
   const bucketNextPath = join(processedDir, BUCKET_NEXT_FILE);
 
   if (existsSync(vectorsPath) && existsSync(labelsPath)) {
-    const vectors = readUint16File(vectorsPath);
+    const vectors = readUint8File(vectorsPath);
     const labels = new Uint8Array(readFileSync(labelsPath));
 
     if (!existsSync(bucketHeadsPath) || !existsSync(bucketNextPath)) {
@@ -52,14 +52,13 @@ function loadReferenceIndex() {
 }
 
 function createFallbackIndex() {
-  const referenceVectors = new Uint16Array([
-    32902, 38230, 34406, 58419, 43690, 0, 0, 33725, 37683, 32768, 65535, 32768,
-    37683, 32965, 32899, 38230, 34373, 58334, 43690, 0, 0, 33751, 36045, 32768,
-    65535, 32768, 37683, 32968, 32892, 35500, 34472, 58596, 43690, 0, 0, 33620,
-    39321, 32768, 65535, 32768, 37683, 32965, 63921, 60074, 65535, 39891, 60074, 0,
-    0, 63972, 65535, 32768, 65535, 65535, 57343, 32948, 63246, 60074, 65535, 39649,
-    60074, 0, 0, 63568, 65535, 32768, 65535, 65535, 57343, 32965, 64880, 62797, 65535,
-    41382, 60074, 0, 0, 64552, 63897, 32768, 65535, 65535, 57343, 32915,
+  const referenceVectors = new Uint8Array([
+    129, 149, 134, 227, 170, 0, 0, 132, 147, 128, 255, 128, 147, 129,
+    129, 149, 134, 227, 170, 0, 0, 132, 141, 128, 255, 128, 147, 129,
+    128, 139, 135, 228, 170, 0, 0, 131, 153, 128, 255, 128, 147, 129,
+    249, 234, 255, 156, 234, 0, 0, 249, 255, 128, 255, 255, 223, 129,
+    246, 234, 255, 155, 234, 0, 0, 247, 255, 128, 255, 255, 223, 129,
+    252, 244, 255, 161, 234, 0, 0, 251, 249, 128, 255, 255, 223, 129,
   ]);
 
   const referenceLabels = new Uint8Array([LEGIT, LEGIT, LEGIT, FRAUD, FRAUD, FRAUD]);
@@ -83,18 +82,7 @@ function readUint32File(path: string): Uint32Array {
   return copy;
 }
 
-function readUint16File(path: string): Uint16Array {
+function readUint8File(path: string): Uint8Array {
   const buffer = readFileSync(path);
-
-  if (buffer.byteOffset % 2 === 0) {
-    return new Uint16Array(buffer.buffer, buffer.byteOffset, buffer.byteLength / 2);
-  }
-
-  const copy = new Uint16Array(buffer.byteLength / 2);
-
-  for (let index = 0; index < copy.length; index += 1) {
-    copy[index] = buffer.readUInt16LE(index * 2);
-  }
-
-  return copy;
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 }

@@ -14,7 +14,7 @@ export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse
   }
 
   const queryVector = new Float32Array(VECTOR_DIMENSIONS);
-  const quantizedQueryVector = new Uint16Array(VECTOR_DIMENSIONS);
+  const quantizedQueryVector = new Uint8Array(VECTOR_DIMENSIONS);
   const topKResult = createTopKResult(TOP_K);
 
   normalizeTransaction(payload, queryVector);
