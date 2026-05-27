@@ -1,12 +1,12 @@
 import { VECTOR_DIMENSIONS, normalizeTransaction } from './normalize.js';
-import { createTopKResult, quantizeVector, topKSearch } from './vector-search.js';
+import { createTopKResult, quantizeVector, topKBucketSearch } from './vector-search.js';
 import { referenceIndex } from '../data/reference-index.js';
 import type { FraudScoreRequest, FraudScoreResponse, TransactionPayload } from '../types/transaction.js';
 
 const TOP_K = 5;
 const FRAUD_THRESHOLD = 0.6;
 
-export async function scoreTransaction(request: FraudScoreRequest): Promise<FraudScoreResponse> {
+export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse {
   const payload = getTransactionPayload(request);
 
   if (payload === null) {
@@ -17,10 +17,10 @@ export async function scoreTransaction(request: FraudScoreRequest): Promise<Frau
   const quantizedQueryVector = new Uint16Array(VECTOR_DIMENSIONS);
   const topKResult = createTopKResult(TOP_K);
 
-  await normalizeTransaction(payload, queryVector);
-  await quantizeVector(queryVector, quantizedQueryVector);
-  const neighbors = await topKSearch(referenceIndex, quantizedQueryVector, TOP_K, topKResult);
-  const fraudScore = await calculateFraudScore(referenceIndex.labels, neighbors);
+  normalizeTransaction(payload, queryVector);
+  quantizeVector(queryVector, quantizedQueryVector);
+  const neighbors = topKBucketSearch(referenceIndex, quantizedQueryVector, TOP_K, topKResult);
+  const fraudScore = calculateFraudScore(referenceIndex.labels, neighbors);
 
   return {
     approved: fraudScore < FRAUD_THRESHOLD,
@@ -36,7 +36,7 @@ export function getTransactionPayload(request: FraudScoreRequest): TransactionPa
   return request;
 }
 
-async function calculateFraudScore(labels: Uint8Array, neighbors: ReturnType<typeof createTopKResult>): Promise<number> {
+function calculateFraudScore(labels: Uint8Array, neighbors: ReturnType<typeof createTopKResult>): number {
   if (neighbors.found === 0) {
     return 0;
   }

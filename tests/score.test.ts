@@ -61,7 +61,7 @@ describe('scoreTransaction', () => {
     expect(response.approved).toBe(false);
   });
 
-  it('throws instead of approving invalid empty input', async () => {
-    await expect(scoreTransaction([])).rejects.toThrow('Invalid fraud-score payload');
+  it('throws instead of approving invalid empty input', () => {
+    expect(() => scoreTransaction([])).toThrow('Invalid fraud-score payload');
   });
 });

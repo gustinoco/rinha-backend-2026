@@ -4,10 +4,10 @@ import { mccRiskMap, normalization } from '../data/config.js';
 export const VECTOR_DIMENSIONS = 14;
 const DEFAULT_MCC_RISK = 0.5;
 
-export async function normalizeTransaction(
+export function normalizeTransaction(
   payload: TransactionPayload,
   output: Float32Array,
-): Promise<Float32Array> {
+): Float32Array {
   const config = normalization;
   const requestedAt = new Date(payload.transaction.requested_at);
 
@@ -32,7 +32,7 @@ export async function normalizeTransaction(
   output[8] = clamp01(payload.customer.tx_count_24h / config.maxTxCount24h);
   output[9] = payload.terminal.is_online ? 1 : 0;
   output[10] = payload.terminal.card_present ? 1 : 0;
-  output[11] = (await isKnownMerchant(payload.merchant.id, payload.customer.known_merchants)) ? 0 : 1;
+  output[11] = isKnownMerchant(payload.merchant.id, payload.customer.known_merchants) ? 0 : 1;
   output[12] = mccRisk(payload.merchant.mcc);
   output[13] = clamp01(payload.merchant.avg_amount / config.maxMerchantAvgAmount);
 
@@ -73,7 +73,7 @@ function minutesBetween(previous: string, current: string): number {
   return Math.max(0, Math.floor((currentMs - previousMs) / 60000));
 }
 
-async function isKnownMerchant(merchantId: string, knownMerchants: string[]): Promise<boolean> {
+function isKnownMerchant(merchantId: string, knownMerchants: string[]): boolean {
   for (let index = 0; index < knownMerchants.length; index += 1) {
     if (knownMerchants[index] === merchantId) {
       return true;
