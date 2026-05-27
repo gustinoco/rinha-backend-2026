@@ -1,0 +1,7 @@
+{
+  "participants": ["Gustavo Tinoco"],
+  "social": ["https://github.com/gustinoco"],
+  "source-code-repo": "https://github.com/gustinoco/rinha-backend-2026",
+  "stack": ["node", "typescript", "fastify", "nginx", "docker"],
+  "open_to_work": true
+}
