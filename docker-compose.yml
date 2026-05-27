@@ -18,7 +18,7 @@ services:
       - api2
 
   api1:
-    image: gustavotinoco/rinha-fraud-api:latest
+    image: gustavotinoo/rinha-fraud-api:latest
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 159m
@@ -35,7 +35,7 @@ services:
       - '8080'
 
   api2:
-    image: gustavotinoco/rinha-fraud-api:latest
+    image: gustavotinoo/rinha-fraud-api:latest
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 159m
