@@ -22,7 +22,7 @@ services:
         max-file: '2'
 
   api1:
-    image: gustavotinoo/rinha-fraud-api:v0.3.0-89ccd13
+    image: gustavotinoo/rinha-fraud-api:v0.4.0-f317411
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
@@ -35,11 +35,11 @@ services:
     expose:
       - '8080'
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:9999/ready']
+      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:8080/ready']
       interval: 2s
       timeout: 1s
       retries: 30
-      start_period: 5s
+      start_period: 15s
     logging:
       driver: json-file
       options:
@@ -47,7 +47,7 @@ services:
         max-file: '2'
 
   api2:
-    image: gustavotinoo/rinha-fraud-api:v0.3.0-89ccd13
+    image: gustavotinoo/rinha-fraud-api:v0.4.0-f317411
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
@@ -60,11 +60,11 @@ services:
     expose:
       - '8080'
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:9999/ready']
+      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:8080/ready']
       interval: 2s
       timeout: 1s
       retries: 30
-      start_period: 5s
+      start_period: 15s
     logging:
       driver: json-file
       options:
