@@ -2,8 +2,11 @@ import { VECTOR_DIMENSIONS, normalizeTransaction } from './normalize.js';
 import { referenceIndex } from '../data/reference-index.js';
 import type { FraudScoreRequest, FraudScoreResponse, TransactionPayload } from '../types/transaction.js';
 
-const TOP_K = 5;
+export const TOP_K = 5;
 const FRAUD_THRESHOLD = 0.6;
+// 3/5 = 0.6 → quando frauds >= 3, ja estamos no threshold. Comparar inteiro
+// evita divisao por TOP_K + comparacao em float no hot path.
+const FRAUD_THRESHOLD_COUNT = Math.ceil(FRAUD_THRESHOLD * TOP_K);
 
 // Node.js eh single-threaded e scoreTransaction eh sincrono, entao podemos
 // reutilizar os mesmos buffers entre requests sem race condition.
@@ -11,7 +14,12 @@ const QUERY_VECTOR = new Float32Array(VECTOR_DIMENSIONS);
 // hnswlib-node aceita number[] (array regular) como input.
 const QUERY_ARRAY = new Array<number>(VECTOR_DIMENSIONS);
 
-export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse {
+/**
+ * Hot path: retorna so o count de fraudes nos top-K vizinhos (0..K).
+ * fraud.ts usa isso pra indexar uma tabela de responses pre-construidas,
+ * eliminando JSON.stringify por request.
+ */
+export function countFraudNeighbors(request: FraudScoreRequest): number {
   const payload = getTransactionPayload(request);
 
   if (payload === null) {
@@ -24,11 +32,18 @@ export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse
   }
 
   const { neighbors } = referenceIndex.search(QUERY_ARRAY, TOP_K);
-  const fraudScore = calculateFraudScore(referenceIndex.labels, neighbors);
+  return countFrauds(referenceIndex.labels, neighbors);
+}
 
+/**
+ * Wrapper para uso em testes e como API publica. Em runtime de prod, fraud.ts
+ * chama countFraudNeighbors() diretamente.
+ */
+export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse {
+  const frauds = countFraudNeighbors(request);
   return {
-    approved: fraudScore < FRAUD_THRESHOLD,
-    fraud_score: fraudScore,
+    approved: frauds < FRAUD_THRESHOLD_COUNT,
+    fraud_score: frauds / TOP_K,
   };
 }
 
@@ -40,7 +55,7 @@ export function getTransactionPayload(request: FraudScoreRequest): TransactionPa
   return request;
 }
 
-function calculateFraudScore(labels: Uint8Array, neighbors: readonly number[]): number {
+function countFrauds(labels: Uint8Array, neighbors: readonly number[]): number {
   const found = neighbors.length;
   if (found === 0) return 0;
 
@@ -50,6 +65,5 @@ function calculateFraudScore(labels: Uint8Array, neighbors: readonly number[]): 
       frauds += 1;
     }
   }
-
-  return frauds / TOP_K;
+  return frauds;
 }

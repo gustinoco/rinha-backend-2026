@@ -14,7 +14,7 @@ import { VECTOR_DIMENSIONS } from '../src/core/normalize.js';
 const { HierarchicalNSW } = hnsw;
 
 // HNSW params — N=350K + M=16 dá ~67MB de HNSW.
-// efConstruction=200 e ef_search=100 dão recall ~99%.
+// efConstruction=200 garante grafo de boa qualidade, ef_search ajustavel em runtime.
 const TARGET_SAMPLES = 350_000;
 const HNSW_M = 16;
 const HNSW_EF_CONSTRUCTION = 200;
