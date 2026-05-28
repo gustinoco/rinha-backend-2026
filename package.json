@@ -16,7 +16,8 @@
     "preprocess": "tsx scripts/preprocess.ts"
   },
   "dependencies": {
-    "fastify": "^5.8.5"
+    "fastify": "^5.8.5",
+    "hnswlib-node": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

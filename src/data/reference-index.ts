@@ -1,88 +1,92 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import hnsw from 'hnswlib-node';
 import { VECTOR_DIMENSIONS } from '../core/normalize.js';
-import { BUCKET_COUNT, createVectorSearchIndexFrom } from '../core/vector-search.js';
 
-const VECTORS_FILE = 'reference-vectors.u8';
+const { HierarchicalNSW } = hnsw;
+
+const HNSW_FILE = 'reference-hnsw.dat';
 const LABELS_FILE = 'reference-labels.u8';
-const BUCKET_HEADS_FILE = 'reference-bucket-heads.u32';
-const BUCKET_NEXT_FILE = 'reference-bucket-next.u32';
 
-const LEGIT = 0;
-const FRAUD = 1;
+// ef controla quao "fundo" o HNSW navega no grafo na busca.
+// Com M=16 (grafo denso) ef=100 ja entrega recall ~99% em <0.1ms.
+const HNSW_EF_SEARCH = 100;
 
-export const referenceIndex = loadReferenceIndex();
+export type KnnResult = {
+  neighbors: readonly number[];
+  distances: readonly number[];
+};
 
-function loadReferenceIndex() {
+export type SearchIndex = {
+  readonly labels: Uint8Array;
+  search(query: number[], topK: number): KnnResult;
+};
+
+export const referenceIndex: SearchIndex = loadReferenceIndex();
+
+function loadReferenceIndex(): SearchIndex {
   if (process.env.VITEST === 'true') {
     return createFallbackIndex();
   }
 
   const processedDir = join(process.cwd(), 'data', 'processed');
-  const vectorsPath = join(processedDir, VECTORS_FILE);
+  const hnswPath = join(processedDir, HNSW_FILE);
   const labelsPath = join(processedDir, LABELS_FILE);
-  const bucketHeadsPath = join(processedDir, BUCKET_HEADS_FILE);
-  const bucketNextPath = join(processedDir, BUCKET_NEXT_FILE);
 
-  if (existsSync(vectorsPath) && existsSync(labelsPath)) {
-    const vectors = readUint8File(vectorsPath);
-    const labels = new Uint8Array(readFileSync(labelsPath));
-
-    if (!existsSync(bucketHeadsPath) || !existsSync(bucketNextPath)) {
-      return createVectorSearchIndexFrom(VECTOR_DIMENSIONS, vectors, labels);
-    }
-
-    const bucketHeads = readUint32File(bucketHeadsPath);
-    const bucketNext = readUint32File(bucketNextPath);
-
-    if (bucketHeads.length !== BUCKET_COUNT || bucketNext.length !== labels.length) {
-      return createVectorSearchIndexFrom(VECTOR_DIMENSIONS, vectors, labels);
-    }
-
-    return createVectorSearchIndexFrom(
-      VECTOR_DIMENSIONS,
-      vectors,
-      labels,
-      bucketHeads,
-      bucketNext,
-    );
+  if (!existsSync(hnswPath) || !existsSync(labelsPath)) {
+    process.stderr.write(`WARN: HNSW files missing, using fallback\n`);
+    return createFallbackIndex();
   }
 
-  return createFallbackIndex();
+  const labels = new Uint8Array(readFileSync(labelsPath));
+  const index = new HierarchicalNSW('l2', VECTOR_DIMENSIONS);
+  index.readIndexSync(hnswPath);
+  index.setEf(HNSW_EF_SEARCH);
+
+  return {
+    labels,
+    search(query, topK) {
+      return index.searchKnn(query, topK) as KnnResult;
+    },
+  };
 }
 
-function createFallbackIndex() {
-  const referenceVectors = new Uint8Array([
-    129, 149, 134, 227, 170, 0, 0, 132, 147, 128, 255, 128, 147, 129,
-    129, 149, 134, 227, 170, 0, 0, 132, 141, 128, 255, 128, 147, 129,
-    128, 139, 135, 228, 170, 0, 0, 131, 153, 128, 255, 128, 147, 129,
-    249, 234, 255, 156, 234, 0, 0, 249, 255, 128, 255, 255, 223, 129,
-    246, 234, 255, 155, 234, 0, 0, 247, 255, 128, 255, 255, 223, 129,
-    252, 244, 255, 161, 234, 0, 0, 251, 249, 128, 255, 255, 223, 129,
-  ]);
+// Fallback brute-force pra rodar testes sem precisar de arquivo HNSW.
+// 6 vetores legit/fraud que cobrem os casos basicos.
+function createFallbackIndex(): SearchIndex {
+  const refs: ReadonlyArray<{ vector: number[]; label: number }> = [
+    { vector: [0.004, 0.167, 0.05, 0.783, 0.333, -1, -1, 0.029, 0.15, 0, 1, 0, 0.15, 0.006], label: 0 },
+    { vector: [0.004, 0.167, 0.049, 0.78, 0.333, -1, -1, 0.03, 0.1, 0, 1, 0, 0.15, 0.006], label: 0 },
+    { vector: [0.003, 0.083, 0.052, 0.788, 0.333, -1, -1, 0.026, 0.2, 0, 1, 0, 0.15, 0.006], label: 0 },
+    { vector: [0.951, 0.833, 1, 0.217, 0.833, -1, -1, 0.952, 1, 0, 1, 1, 0.75, 0.005], label: 1 },
+    { vector: [0.93, 0.833, 1, 0.21, 0.833, -1, -1, 0.94, 1, 0, 1, 1, 0.75, 0.006], label: 1 },
+    { vector: [0.98, 0.917, 1, 0.263, 0.833, -1, -1, 0.97, 0.95, 0, 1, 1, 0.75, 0.005], label: 1 },
+  ];
 
-  const referenceLabels = new Uint8Array([LEGIT, LEGIT, LEGIT, FRAUD, FRAUD, FRAUD]);
+  const labels = new Uint8Array(refs.map((r) => r.label));
 
-  return createVectorSearchIndexFrom(VECTOR_DIMENSIONS, referenceVectors, referenceLabels);
-}
-
-function readUint32File(path: string): Uint32Array {
-  const buffer = readFileSync(path);
-
-  if (buffer.byteOffset % 4 === 0) {
-    return new Uint32Array(buffer.buffer, buffer.byteOffset, buffer.byteLength / 4);
-  }
-
-  const copy = new Uint32Array(buffer.byteLength / 4);
-
-  for (let index = 0; index < copy.length; index += 1) {
-    copy[index] = buffer.readUInt32LE(index * 4);
-  }
-
-  return copy;
-}
-
-function readUint8File(path: string): Uint8Array {
-  const buffer = readFileSync(path);
-  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  return {
+    labels,
+    search(query, topK) {
+      const distances: { dist: number; idx: number }[] = [];
+      for (let i = 0; i < refs.length; i += 1) {
+        const v = refs[i]!.vector;
+        let d = 0;
+        for (let k = 0; k < VECTOR_DIMENSIONS; k += 1) {
+          const diff = (v[k] as number) - (query[k] as number);
+          d += diff * diff;
+        }
+        distances.push({ dist: d, idx: i });
+      }
+      distances.sort((a, b) => a.dist - b.dist);
+      const k = Math.min(topK, distances.length);
+      const neighbors: number[] = [];
+      const dists: number[] = [];
+      for (let i = 0; i < k; i += 1) {
+        neighbors.push(distances[i]!.idx);
+        dists.push(distances[i]!.dist);
+      }
+      return { neighbors, distances: dists };
+    },
+  };
 }

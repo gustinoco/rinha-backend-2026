@@ -1,5 +1,7 @@
 FROM node:26-alpine AS deps
 WORKDIR /app
+# hnswlib-node nao tem prebuild pra musl/alpine; precisa compilar do C++.
+RUN apk add --no-cache python3 make g++ linux-headers
 COPY package*.json ./
 RUN npm ci
 
