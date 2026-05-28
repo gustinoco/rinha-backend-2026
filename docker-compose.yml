@@ -4,53 +4,69 @@ services:
     platform: linux/amd64
     cpus: 0.10
     mem_limit: 24m
-    deploy:
-      resources:
-        limits:
-          cpus: '0.10'
-          memory: 24M
+    init: true
+    restart: on-failure
     ports:
       - '9999:9999'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api1
-      - api2
+      api1:
+        condition: service_healthy
+      api2:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '2'
 
   api1:
-    image: gustavotinoo/rinha-fraud-api:latest
+    image: gustavotinoo/rinha-fraud-api:v0.2.1-38eae9f
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
-    deploy:
-      resources:
-        limits:
-          cpus: '0.45'
-          memory: 163M
+    init: true
+    restart: on-failure
     environment:
       NODE_ENV: production
       PORT: 8080
       BODY_LIMIT_BYTES: 1048576
     expose:
       - '8080'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:8080/ready']
+      interval: 2s
+      timeout: 1s
+      retries: 30
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '2'
 
   api2:
-    image: gustavotinoo/rinha-fraud-api:latest
+    image: gustavotinoo/rinha-fraud-api:v0.2.1-38eae9f
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
-    deploy:
-      resources:
-        limits:
-          cpus: '0.45'
-          memory: 163M
+    init: true
+    restart: on-failure
     environment:
       NODE_ENV: production
       PORT: 8080
       BODY_LIMIT_BYTES: 1048576
     expose:
       - '8080'
-
-networks:
-  default:
-    driver: bridge
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:8080/ready']
+      interval: 2s
+      timeout: 1s
+      retries: 30
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '2'
