@@ -18,7 +18,7 @@ services:
       - api2
 
   api1:
-    image: gustavotinoo/rinha-fraud-api:v0.4.0-f317411
+    image: gustavotinoo/rinha-fraud-api:v0.4.1-5422c8c
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
@@ -33,9 +33,15 @@ services:
       BODY_LIMIT_BYTES: 1048576
     expose:
       - '8080'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:8080/ready']
+      interval: 2s
+      timeout: 1s
+      retries: 30
+      start_period: 30s
 
   api2:
-    image: gustavotinoo/rinha-fraud-api:v0.4.0-f317411
+    image: gustavotinoo/rinha-fraud-api:v0.4.1-5422c8c
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
@@ -50,6 +56,12 @@ services:
       BODY_LIMIT_BYTES: 1048576
     expose:
       - '8080'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', '--tries=1', 'http://localhost:8080/ready']
+      interval: 2s
+      timeout: 1s
+      retries: 30
+      start_period: 30s
 
 networks:
   default:
