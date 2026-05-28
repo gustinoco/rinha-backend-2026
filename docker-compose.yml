@@ -22,7 +22,7 @@ services:
         max-file: '2'
 
   api1:
-    image: gustavotinoo/rinha-fraud-api:v0.2.1-38eae9f
+    image: gustavotinoo/rinha-fraud-api:v0.3.0-89ccd13
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
@@ -47,7 +47,7 @@ services:
         max-file: '2'
 
   api2:
-    image: gustavotinoo/rinha-fraud-api:v0.2.1-38eae9f
+    image: gustavotinoo/rinha-fraud-api:v0.3.0-89ccd13
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
