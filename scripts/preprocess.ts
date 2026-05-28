@@ -22,7 +22,7 @@ const BUCKET_HEADS_TMP = join(OUTPUT_DIR, 'reference-bucket-heads.u32.tmp');
 const BUCKET_NEXT_TMP = join(OUTPUT_DIR, 'reference-bucket-next.u32.tmp');
 const BUCKET_HEADS_FILE = join(OUTPUT_DIR, 'reference-bucket-heads.u32');
 const BUCKET_NEXT_FILE = join(OUTPUT_DIR, 'reference-bucket-next.u32');
-const BUCKET_COUNT = 1_048_576;
+const BUCKET_COUNT = 1_048_576; // 16^5: BUCKET_BITS=4 com 5 nibbles indexadas
 const EMPTY_LINK = 0xffffffff;
 const MAX_REFERENCES = 3_000_000;
 

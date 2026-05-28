@@ -6,6 +6,12 @@ import type { FraudScoreRequest, FraudScoreResponse, TransactionPayload } from '
 const TOP_K = 5;
 const FRAUD_THRESHOLD = 0.6;
 
+// Node.js eh single-threaded e scoreTransaction eh sincrono, entao podemos
+// reutilizar os mesmos buffers entre requests sem race condition.
+const QUERY_VECTOR = new Float32Array(VECTOR_DIMENSIONS);
+const QUANTIZED_QUERY = new Uint8Array(VECTOR_DIMENSIONS);
+const TOP_K_RESULT = createTopKResult(TOP_K);
+
 export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse {
   const payload = getTransactionPayload(request);
 
@@ -13,13 +19,9 @@ export function scoreTransaction(request: FraudScoreRequest): FraudScoreResponse
     throw new Error('Invalid fraud-score payload');
   }
 
-  const queryVector = new Float32Array(VECTOR_DIMENSIONS);
-  const quantizedQueryVector = new Uint8Array(VECTOR_DIMENSIONS);
-  const topKResult = createTopKResult(TOP_K);
-
-  normalizeTransaction(payload, queryVector);
-  quantizeVector(queryVector, quantizedQueryVector);
-  const neighbors = topKBucketSearch(referenceIndex, quantizedQueryVector, TOP_K, topKResult);
+  normalizeTransaction(payload, QUERY_VECTOR);
+  quantizeVector(QUERY_VECTOR, QUANTIZED_QUERY);
+  const neighbors = topKBucketSearch(referenceIndex, QUANTIZED_QUERY, TOP_K, TOP_K_RESULT);
   const fraudScore = calculateFraudScore(referenceIndex.labels, neighbors);
 
   return {
@@ -42,11 +44,11 @@ function calculateFraudScore(labels: Uint8Array, neighbors: ReturnType<typeof cr
   }
 
   let frauds = 0;
+  const found = neighbors.found;
+  const indexes = neighbors.indexes;
 
-  for (let index = 0; index < neighbors.found; index += 1) {
-    const neighborIndex = neighbors.indexes[index] as number;
-
-    if (labels[neighborIndex] === 1) {
+  for (let index = 0; index < found; index += 1) {
+    if (labels[indexes[index] as number] === 1) {
       frauds += 1;
     }
   }
