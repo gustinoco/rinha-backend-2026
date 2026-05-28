@@ -9,8 +9,9 @@ const HNSW_FILE = 'reference-hnsw.dat';
 const LABELS_FILE = 'reference-labels.u8';
 
 // ef controla quao "fundo" o HNSW navega no grafo na busca.
-// Com M=16 (grafo denso) ef=100 ja entrega recall ~99% em <0.1ms.
-const HNSW_EF_SEARCH = 100;
+// Mac Mini 2014 da Rinha (Haswell 2.6GHz) eh ~3x mais lento que dev moderno.
+// ef=50 reduz tempo por query pela metade, recall cai de ~99% pra ~97%.
+const HNSW_EF_SEARCH = 50;
 
 export type KnnResult = {
   neighbors: readonly number[];
