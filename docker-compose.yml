@@ -18,7 +18,7 @@ services:
       - api2
 
   api1:
-    image: gustavotinoo/rinha-fraud-api:v0.4.1-5422c8c
+    image: gustavotinoo/rinha-fraud-api:v0.4.2-7b21e24
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
@@ -41,7 +41,7 @@ services:
       start_period: 30s
 
   api2:
-    image: gustavotinoo/rinha-fraud-api:v0.4.1-5422c8c
+    image: gustavotinoo/rinha-fraud-api:v0.4.2-7b21e24
     platform: linux/amd64
     cpus: 0.45
     mem_limit: 163m
